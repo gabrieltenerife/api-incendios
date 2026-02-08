@@ -7,3 +7,4 @@ databricks-sdk
 pydantic
 python-multipart
 jinja2
+imbalanced-learn
