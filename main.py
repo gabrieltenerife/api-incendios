@@ -14,7 +14,6 @@ templates = Jinja2Templates(directory="pages")
 
 # --- DEFINICIÓN DE DATOS (INPUT) ---
 class IncendioInput(BaseModel):
-    claseincendio: str
     numeromediospersonal: int
     latitud: float
     longitud: float
@@ -85,22 +84,31 @@ def health():
 @app.post("/predict")
 def predict(input_data: IncendioInput):
     if model_status != "ok" or model is None:
-        raise HTTPException(status_code=500, detail="El modelo no se ha cargado correctamente desde Databricks.")
+        raise HTTPException(status_code=500, detail="Modelo no disponible")
     
-    # Convertir a DataFrame (Pydantic v2 usa model_dump, v1 usa dict. Usamos dict por compatibilidad)
     try:
         df_input = pd.DataFrame([input_data.dict()])
-        
-        # Realizar predicción
         prediction = model.predict(df_input)
         
-        # Ajustar la salida según tu lógica de negocio
-        resultado = int(prediction[0])
-        
-        return {
-            "prediccion": resultado,
-            "mensaje": "Incendio Peligroso" if resultado == 1 else "Incendio Controlable" # Ajusta este texto según lo que signifique 0 y 1
+        # --- EL TRUCO ESTÁ AQUÍ ---
+        # Convertimos a string sea lo que sea (1 -> "1" o "incendio" -> "incendio")
+        resultado_crudo = str(prediction[0]) 
+
+        # Si el modelo devuelve números, puedes mapearlos aquí si quieres. 
+        # Si devuelve texto, pasará directamente.
+        mapeo_nombres = {
+            "0": "Conato",
+            "1": "Incendio",
+            "2": "GIF"
         }
+        
+        resultado_final = mapeo_nombres.get(resultado_crudo, resultado_crudo)
+
+        return {
+            "prediccion": resultado_final,
+            "mensaje": "Predicción procesada correctamente"
+        }
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error al procesar la predicción: {str(e)}")
-    
+        print(f"ERROR EN PREDICCIÓN: {e}")
+        raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
