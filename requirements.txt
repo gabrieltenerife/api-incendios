@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+scikit-learn
+joblib
+databricks-sdk
+pydantic
+python-multipart
+jinja2

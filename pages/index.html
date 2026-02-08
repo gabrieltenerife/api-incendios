@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de Incendios</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        h1 { color: #333; text-align: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { grid-column: span 2; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1.1em; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        #resultado { margin-top: 20px; padding: 15px; border-radius: 4px; text-align: center; font-weight: bold; display: none; }
+        .safe { background-color: #d4edda; color: #155724; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        .status-bar { text-align: right; font-size: 0.8em; color: #666; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="status-bar">
+        Estado del Modelo: <strong>{{ status }}</strong>
+    </div>
+
+    <div class="container">
+        <h1>Predicción de Incendios</h1>
+        <form id="fireForm">
+            <div class="form-grid">
+                
+                <div>
+                    <label for="iddetectadopor">Detectado Por:</label>
+                    <select id="iddetectadopor" required>
+                        <option value="vigilante_movil">Vigilante Móvil</option>
+                        <option value="base_cdf">Base CDF</option>
+                        <option value="aeronave">Aeronave</option>
+                        <option value="agente_forestal">Agente Forestal</option>
+                        <option value="llamada_particular">Llamada Particular</option>
+                        <option value="ccff_seguridad">CCFF Seguridad</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="tipodeataque">Tipo de Ataque:</label>
+                    <select id="tipodeataque" required>
+                        <option value="directo">Directo</option>
+                        <option value="indirecto">Indirecto</option>
+                        <option value="combinado">Combinado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="combustible">Combustible:</label>
+                    <select id="combustible" required>
+                        <option value="pastizal">Pastizal</option>
+                        <option value="matorral">Matorral</option>
+                        <option value="bosques">Bosques</option>
+                        <option value="mat_bos">Matorral-Bosque</option>
+                        <option value="pas_bos">Pastizal-Bosque</option>
+                        <option value="pas_mat_bos">Pastizal-Matorral-Bosque</option>
+                        <option value="pas_mat">Pastizal-Matorral</option>
+                        <option value="restos">Restos</option>
+                        <option value="mat_bos_res">Mat-Bos-Restos</option>
+                        <option value="bos_res">Bosque-Restos</option>
+                        <option value="mat_res">Matorral-Restos</option>
+                        <option value="pas_mat_bos_res">Pas-Mat-Bos-Restos</option>
+                        <option value="pas_mat_res">Pas-Mat-Restos</option>
+                        <option value="pas_bos_res">Pas-Bos-Restos</option>
+                        <option value="pas_res">Pastizal-Restos</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="horadeteccion">Hora Detección (Franja):</label>
+                    <select id="horadeteccion" required>
+                        <option value="manana">Mañana</option>
+                        <option value="tarde">Tarde</option>
+                        <option value="noche">Noche</option>
+                        <option value="madrugada">Madrugada</option>
+                    </select>
+                </div>
+
+                <div><label>Clase Incendio (Texto):</label><input type="text" id="claseincendio" value="A"></div>
+                <div><label>Año:</label><input type="number" id="anio" value="2023"></div>
+                
+                <div><label>Latitud:</label><input type="number" step="any" id="latitud" value="40.4"></div>
+                <div><label>Longitud:</label><input type="number" step="any" id="longitud" value="-3.7"></div>
+                <div><label>Altitud (m):</label><input type="number" step="any" id="altitud" value="600"></div>
+                
+                <div><label>Temp. Máxima (ºC):</label><input type="number" step="any" id="tempmaxima" value="30.5"></div>
+                <div><label>Humedad Relativa (%):</label><input type="number" step="any" id="humrelativa" value="45"></div>
+                <div><label>Velocidad Viento (km/h):</label><input type="number" step="any" id="velocidadviento" value="15"></div>
+                <div><label>Días Última Lluvia:</label><input type="number" step="any" id="diasultimalluvia" value="10"></div>
+                
+                <div><label>Probabilidad Ignición:</label><input type="number" step="any" id="probabilidadignicion" value="0.5"></div>
+                <div><label>ID Peligro:</label><input type="number" step="any" id="idpeligro" value="3"></div>
+                
+                <div><label>ID Provincia:</label><input type="number" id="idprovincia" value="28"></div>
+                <div><label>ID Comunidad:</label><input type="number" id="idcomunidad" value="7"></div>
+                
+                <div><label>Nº Medios Personal:</label><input type="number" id="numeromediospersonal" value="5"></div>
+                <div><label>Nº Medios Pesados:</label><input type="number" id="numeromediospesados" value="1"></div>
+                <div><label>Nº Medios Aéreos:</label><input type="number" id="numeromediosaereos" value="0"></div>
+
+                <button type="button" onclick="predecirIncendio()">Consultar Predicción</button>
+            </div>
+        </form>
+
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function predecirIncendio() {
+            const btn = document.querySelector('button');
+            const resDiv = document.getElementById('resultado');
+            
+            btn.disabled = true;
+            btn.textContent = "Calculando...";
+            resDiv.style.display = 'none';
+
+            // Recolectamos los datos del DOM y los convertimos al tipo correcto
+            const data = {
+                claseincendio: document.getElementById('claseincendio').value,
+                numeromediospersonal: parseInt(document.getElementById('numeromediospersonal').value),
+                latitud: parseFloat(document.getElementById('latitud').value),
+                longitud: parseFloat(document.getElementById('longitud').value),
+                altitud: parseFloat(document.getElementById('altitud').value),
+                anio: parseInt(document.getElementById('anio').value),
+                velocidadviento: parseFloat(document.getElementById('velocidadviento').value),
+                numeromediospesados: parseInt(document.getElementById('numeromediospesados').value),
+                humrelativa: parseFloat(document.getElementById('humrelativa').value),
+                tempmaxima: parseFloat(document.getElementById('tempmaxima').value),
+                diasultimalluvia: parseFloat(document.getElementById('diasultimalluvia').value),
+                idprovincia: parseInt(document.getElementById('idprovincia').value),
+                probabilidadignicion: parseFloat(document.getElementById('probabilidadignicion').value),
+                idcomunidad: parseInt(document.getElementById('idcomunidad').value),
+                numeromediosaereos: parseInt(document.getElementById('numeromediosaereos').value),
+                iddetectadopor: document.getElementById('iddetectadopor').value, // Selector
+                idpeligro: parseFloat(document.getElementById('idpeligro').value),
+                tipodeataque: document.getElementById('tipodeataque').value, // Selector
+                combustible: document.getElementById('combustible').value, // Selector
+                horadeteccion: document.getElementById('horadeteccion').value // Selector
+            };
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || "Error en la petición");
+                }
+
+                const result = await response.json();
+                
+                // Mostrar resultado
+                resDiv.style.display = 'block';
+                resDiv.innerHTML = `Predicción: ${result.prediccion} <br> <span>${result.mensaje}</span>`;
+                
+                // Estilo según el resultado (asumiendo 1=Malo, 0=Bueno, ajusta según tu modelo)
+                if (result.prediccion === 1) {
+                    resDiv.className = 'danger';
+                } else {
+                    resDiv.className = 'safe';
+                }
+
+            } catch (error) {
+                resDiv.style.display = 'block';
+                resDiv.className = 'danger';
+                resDiv.innerHTML = `Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Consultar Predicción";
+            }
+        }
+    </script>
+</body>
+</html>
